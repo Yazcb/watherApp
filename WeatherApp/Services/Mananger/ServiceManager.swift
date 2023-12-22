@@ -48,4 +48,24 @@ class ServiceManager {
             }
         }
     }
+    
+    func requestWithParams<T:Decodable>(urlString: String,params: [String:Any], completionHandler: @escaping(T?) -> Void) {
+        let completeUrl = self.setUrlWithParams(baseUrl: urlString, params: params)
+        
+        self.request(urlString: completeUrl, completionHandler: completionHandler)
+    }
+    
+    func setUrlWithParams(baseUrl: String, params: [String: Any]) -> String {
+        let queryString = params.map { key, value in
+                return "\(key)=\(value)"
+        }.joined(separator: "&")
+           
+        if var urlComponents = URLComponents(string: baseUrl) {
+               urlComponents.query = queryString
+               if let url = urlComponents.url {
+                   return url.absoluteString
+               }
+           }
+        return baseUrl
+    }
 }
