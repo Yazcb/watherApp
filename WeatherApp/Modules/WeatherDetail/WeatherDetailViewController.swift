@@ -21,8 +21,13 @@ class WeatherDetailViewController: UIViewController, CLLocationManagerDelegate {
     @IBOutlet weak var stackLoader: UIStackView!
     @IBOutlet weak var lblInfo: UILabel!
     
-    var locationManager: CLLocationManager!
+    @IBOutlet weak var lblSunrise: UILabel!
+    @IBOutlet weak var lblSunset: UILabel!
+    @IBOutlet weak var scrollView: UIScrollView!
     
+    var locationManager: CLLocationManager!
+    let refreshControl = UIRefreshControl()
+
     private var viewModel: WeatherDetailViewModel = WeatherDetailViewModel()
     
     override func viewDidLoad() {
@@ -30,8 +35,24 @@ class WeatherDetailViewController: UIViewController, CLLocationManagerDelegate {
         subcribe()
         setupRoundStyleView()
         setupLocationManager()
-       
+        
+        refreshControl.addTarget(self, action: #selector(refreshData), for: .valueChanged)
+ 
+        scrollView.refreshControl = refreshControl
     }
+    
+    @objc func refreshData() {
+        self.viewModel.updateWeatherByLocation()
+    }
+    
+    
+    // Función para cargar datos en la vista
+        func loadData() {
+            // Aquí debes cargar o actualizar los datos de la vista
+            // Por ejemplo, puedes cargar datos desde una API o una fuente de datos local
+            // Luego, actualiza la vista según tus necesidades
+        }
+    
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -77,17 +98,45 @@ extension WeatherDetailViewController {
                 let locationData = self.viewModel.getLocation()
                 self.locationView.initData(data: locationData)
                 
-               
-            } else {
-                self.stackWeatherView.isHidden = true
-                self.lblInfo.text = self.viewModel.error
+                self.lblSunrise.text = self.viewModel.formatSunriseDate()
+                self.lblSunset.text = self.viewModel.formatSunsetDate()
+                
+                self.stackLoader.isHidden = true
+                self.stackWeatherView.isHidden = false
             }
+            self.updateRefreshing()
+        }
+        
+        
+        self.viewModel.error.bind { value in
+            self.stackLoader.isHidden = true
+            self.showErrorMessage(value)
         }
     }
     
+    func showErrorMessage(_ error: String) {
+        let alert = UIAlertController(
+            title: "Aviso",
+            message: error,
+            preferredStyle: .alert
+        )
+       
+        
+        let acceptAction = UIAlertAction(title: "Aceptar", style: .default, handler: nil)
+        
+        alert.addAction(acceptAction)
+        
+        self.present(alert, animated: true, completion: nil)
+    }
     
     func fillView(data: CustomViewData, view: DetailCustomView) {
         self.weatherView.initData(data: data)
+    }
+    
+    func updateRefreshing() {
+        if self.viewModel.isUpdating {
+            self.refreshControl.endRefreshing()
+        }
     }
 }
 

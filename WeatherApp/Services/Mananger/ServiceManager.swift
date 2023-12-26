@@ -38,15 +38,20 @@ class ServiceManager {
     
     
     func request<T:Decodable>(urlString: String, completionHandler: @escaping(T?) -> Void) {
-        self.manager.request(urlString).validate().responseDecodable(of: T.self) { (response) in
-            switch response.result {
-                case .success(let data):
-                completionHandler(data)
-            case .failure(let error):
-                self.delegate?.processFailWitError(code: response.response?.statusCode ?? -1, error: error.errorDescription ?? "")
+        if let networkManager = NetworkReachabilityManager(), networkManager.isReachable {
+            self.manager.request(urlString).validate().responseDecodable(of: T.self) { (response) in
+                switch response.result {
+                    case .success(let data):
+                    completionHandler(data)
+                case .failure(let error):
+                    self.delegate?.processFailWitError(code: response.response?.statusCode ?? -1, error: error.errorDescription ?? "")
 
+                }
             }
+        } else {
+            self.delegate?.processFailWitError(code: -1, error: "Por favor revisa tu conexión a internet")
         }
+        
     }
     
     func requestWithParams<T:Decodable>(urlString: String,params: [String:Any], completionHandler: @escaping(T?) -> Void) {

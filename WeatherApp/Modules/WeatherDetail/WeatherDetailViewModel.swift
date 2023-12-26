@@ -13,12 +13,12 @@ class WeatherDetailViewModel {
     var weatherService = WeatherService()
     var weatherResponse: WeatherResponseModel?
     var currentLocation: Coordenatees?
-    var error: String?
+    var error: LiveData<String> = LiveData("")
+    var isUpdating: Bool = false
     
     init() {
         weatherService.delegate = self
     }
-    
     
     func getWeatherByLocation() {
         if let coor  = self.currentLocation {
@@ -27,6 +27,11 @@ class WeatherDetailViewModel {
                 self.isResponseData.value = true
             }
         }
+    }
+    
+    func updateWeatherByLocation() {
+        self.isUpdating =  true
+        getWeatherByLocation()
     }
     
     func getWeatherData() -> CustomViewData {
@@ -64,6 +69,20 @@ class WeatherDetailViewModel {
         return CustomViewData(firstValue: "", secondvalue: "", icon: "")
     }
     
+    func formatSunriseDate() -> String {
+        guard let sunriseUnixTime = self.weatherResponse?.sys.sunrise else {
+            return "Sunrise"
+        }
+        return FormatDate.convertUnixToDate(sunriseUnixTime, format: .militarHHmm)
+    }
+    
+    func formatSunsetDate() -> String {
+        guard let sunsetUnixTime = self.weatherResponse?.sys.sunset else {
+            return "Sunset"
+        }
+        return FormatDate.convertUnixToDate(sunsetUnixTime, format: .militarHHmm)
+    }
+    
     func setCoordenates(latitude: Double, longitude: Double) {
         self.currentLocation = Coordenatees(lon: longitude, lat: latitude)
     }
@@ -71,8 +90,7 @@ class WeatherDetailViewModel {
 
 extension WeatherDetailViewModel: BaseServiceDelegate {
     func processFailWitError(code: Int, error: String) {
-        self.error = "Ocurrio un error"
-        self.isResponseData.value = false
+        self.error.value = error
     }
 }
 
